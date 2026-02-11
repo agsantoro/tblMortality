@@ -6,7 +6,7 @@ library(RColorBrewer)
 library(patchwork)
 
 #Importo base
-load("paper_1/data_rme_suavizada.rda")
+load("data/mortality/data_rme_suavizada.rda")
 
 sf_use_s2(FALSE)
 
@@ -34,7 +34,7 @@ message("Mapas RME suavizada, RR suavizado y PP generados")
 
 
 ggsave(
-  filename = "paper_1/mapa_rmesuav_grilla.jpg",
+  filename = "data/mortality/mapa_rmesuav_grilla.jpg",
   plot = mapa_rme,
   device = "jpeg",
   width = 30,
@@ -44,7 +44,7 @@ ggsave(
 )
 
 ggsave(
-  filename = "paper_1/mapa_pp_grilla.jpg",
+  filename = "data/mortality/mapa_pp_grilla.jpg",
   plot = mapa_pp,
   device = "jpeg",
   width = 30,
