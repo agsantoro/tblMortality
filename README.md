@@ -28,15 +28,15 @@ The directory is organized to maintain a strict separation between raw inputs, p
 
 ## Instructions for Reproduction
 
-1. To replicate the study results, follow the steps below:
+To replicate the study results, follow the steps below:
 
-2. Clone or Download this repository to your local environment.
+1. Clone or Download this repository to your local environment.
 
-3. Ensure that R is installed.
+2. Ensure that R is installed.
 
-4. Install the required library dependencies.
+3. Install the required library dependencies.
 
-5. Run this command in R console:
+4. Run this command in R console:
 
 `
 source("RUN_PROCESS.r")
