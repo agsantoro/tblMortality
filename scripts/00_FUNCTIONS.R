@@ -18,27 +18,27 @@ mapaCompleto = function() {
   mapa <- rbind(mapa, mapa2)
   mapa = rmapshaper::ms_simplify(mapa)
   
-  save(mapa, file = "data/shp/mapa.rda")
+  save(mapa, file = "outputs/maps/mapa.rda")
 }
 
 
 analisisEspacialRME = function (trienio, causa) {
   ##### PREPARACION DE DATOS #####
   # cargar poblaciones por departamentos
-  load("data/population/pobDeptosCenso.rda")
+  load("inputs/data/population/pobDeptosCenso.rda")
   
   
   # carga dataset de tasas de mortalidad de población estandar
-  load("data/mortality/tasasEstandarizadas.rda")
+  load("inputs/data/mortality/tasasEstandarizadas.rda")
   
   # carga mapa
-  load("data/shp/mapa.rda")
+  load("inputs/data/shp/mapa.rda")
   
   # crea lista para guardar resultados
   resultados = list()
   
   # carga lista de causas de mortalidad
-  load("data/mortality/causasMortalidad.rda")
+  load("inputs/data/mortality/causasMortalidad.rda")
   
   causasMortalidad = causasMortalidad %>% 
     pivot_longer(cols= 1:ncol(causasMortalidad),names_to = "LISTA") %>% 
@@ -98,11 +98,11 @@ analisisEspacialRME = function (trienio, causa) {
   
   # carga defunciones del trienio seleccionado
   if (trienio == 1) {
-    load("data/mortality/defTri1.rda")
+    load("inputs/data/mortality/defTri1.rda")
   } else if (trienio == 2) {
-    load("data/mortality/defTri2.rda")
+    load("inputs/data/mortality/defTri2.rda")
   } else if (trienio == 3) {
-    load("data/mortality/defTri3.rda")
+    load("inputs/data/mortality/defTri3.rda")
   }
   
   # filtra según la causa seleccionada
@@ -185,7 +185,7 @@ analisisEspacialRME = function (trienio, causa) {
 
 indicadores_mapa_trienio <-function (df,trienio) {
   # carga mapa de polígonos de departamentos
-  load("data/shp/mapa.rda")
+  load("inputs/data/shp/mapa.rda")
   
   df<-df %>% rename("in1"="CODIGODEPTO") %>%
     left_join(mapa, by = "in1") %>%
@@ -206,7 +206,7 @@ generarRDA = function(trienio,causa) {
   
   RMEtable = indicadores_mapa_trienio(RMEtable, anoCenso)
   
-  save(RMEtable, file = glue("data/mortality/data_trienio_{trienio}.rda"))
+  save(RMEtable, file = glue("outputs/data/data_trienio_{trienio}.rda"))
   
 }
 

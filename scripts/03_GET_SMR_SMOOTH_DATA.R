@@ -10,7 +10,7 @@ library(dplyr)
 library(purrr)
 
 #Carga de archivos
-load("data/mortality/data_rme.rda")
+load("outputs/data/data_rme.rda")
 
 #Aplicar funcion a cada trienio
 datos_trienio_1 <- suavizar_rme(data_trienio = data_rme[data_rme$TRIENIO == "2000-2002",], data_tdf = data_rme)
@@ -67,6 +67,6 @@ data_rme_suavizada <- data_rme_suavizada %>%
 
 #Guardo base
 
-save(data_rme_suavizada, file = "data/mortality/data_rme_suavizada.rda")
+save(data_rme_suavizada, file = "outputs/data/data_rme_suavizada.rda")
 
 message("Dataset generado data_rme_suavizada.rda")

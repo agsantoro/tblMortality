@@ -14,8 +14,8 @@ library(leaflet)
 # 1) PARÁMETROS / PATHS
 # -----------------------------
 
-PATH_XLSX <- "paper_1/bivariado.xlsx"
-PATH_SHP  <- "paper_1/shp/mapa.rda"
+PATH_XLSX <- "inputs/data/population/bivariado.xlsx"
+PATH_SHP  <- "inputs/data/shp/mapa.rda"
 
 TRIENIOS  <- c("2000-2002", "2021-2023")
 ALPHA     <- 0.05
@@ -230,10 +230,10 @@ figura_final <- (mapa_2000 | mapa_2021) +
     legend.box.just = "center"
   )
 
-print(figura_final)
+#print(figura_final)
 
 ggsave(
-  filename = "paper_1/mapa_lisa.jpg",
+  filename = "outputs/figures/mapa_lisa.jpg",
   plot = figura_final,
   device = "jpeg",
   width = 30,
@@ -241,4 +241,8 @@ ggsave(
   units = "cm",
   dpi = 300
 )
+
+unlink("adjacency.graph")
+
+
 
