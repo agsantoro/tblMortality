@@ -8,7 +8,7 @@ The project is structured as a fully automated workflow. By executing the master
 ## Repository Structure
 The directory is organized to maintain a strict separation between raw inputs, processing logic, and analytical outputs:
 
-- inputs/: Source data required for the analysis.
+- inputs/[https://github.com/agsantoro/tblMortality/tree/main/inputs]: Source data required for the analysis.
 
 - data/mortality/: Raw mortality datasets.
 
