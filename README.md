@@ -3,28 +3,28 @@
 This repository contains the complete analytical pipeline, data, and R scripts required to reproduce the statistical findings, mortality estimates, and visualizations presented in the associated research paper.
 
 ## Overview
-The project is structured as a fully automated workflow. By executing the master script, users can transition from raw data inputs to the final processed datasets and scientific figures used in the manuscript. All spatial and demographic analyses were implemented using the R Programming Language.
+The project is structured as a fully automated workflow. By executing the master script, users can transition from data inputs to the final processed datasets and figures used in the manuscript. All spatial and demographic analyses were implemented using the R Programming Language.
 
 ## Repository Structure
-The directory is organized to maintain a strict separation between raw inputs, processing logic, and analytical outputs:
+The directory is organized to maintain a strict separation between data inputs, processing logic, and outputs:
 
-- [inputs/](https://github.com/agsantoro/tblMortality/tree/main/inputs): Source data required for the analysis.
+- [inputs/](https://github.com/agsantoro/tblMortality/tree/main/inputs): source data required for the analysis.
 
-- [data/mortality/](https://github.com/agsantoro/tblMortality/tree/main/data/mortality): Raw mortality datasets.
+- [data/mortality/](https://github.com/agsantoro/tblMortality/tree/main/data/mortality): mortality datasets.
 
-- [data/population/](https://github.com/agsantoro/tblMortality/tree/main/data/population): Population counts and socio-demographic covariates.
+- [data/population/](https://github.com/agsantoro/tblMortality/tree/main/data/population): population counts and socio-demographic covariates.
 
-- [shp/](https://github.com/agsantoro/tblMortality/tree/main/data/shp): Cartographic boundaries and geospatial data (Shapefiles).
+- [shp/](https://github.com/agsantoro/tblMortality/tree/main/data/shp): cartographic boundaries and geospatial data (Shapefiles).
 
-- [scripts/](https://github.com/agsantoro/tblMortality/tree/main/scripts): Modular R scripts performing specific tasks such as data cleaning, statistical modeling, and plot generation.
+- [scripts/](https://github.com/agsantoro/tblMortality/tree/main/scripts): modular R scripts performing specific tasks such as data proccesing, statistical modeling, and plot generation.
 
-- [outputs/](https://github.com/agsantoro/tblMortality/tree/main/outputs): Final results derived from the execution of the pipeline.
+- [outputs/](https://github.com/agsantoro/tblMortality/tree/main/outputs): final results derived from the execution of the pipeline.
 
-- [outputs/data/](https://github.com/agsantoro/tblMortality/tree/main/outputs/data): Processed data frames containing Standardized Mortality Ratios (SMR) and Smoothed Standardized Mortality Ratios.
+- [outputs/data/](https://github.com/agsantoro/tblMortality/tree/main/outputs/data): processed data frames containing Standardized Mortality Ratios and Smoothed Standardized Mortality Ratios.
 
-- [outputs/figures/](https://github.com/agsantoro/tblMortality/tree/main/outputs/figures): High-resolution figures and maps as they appear in the publication.
+- [outputs/figures/](https://github.com/agsantoro/tblMortality/tree/main/outputs/figures): high-resolution figures and maps as they appear in the publication.
 
-- [RUN_PROCESS.r](https://github.com/agsantoro/tblMortality/tree/main/RUN_PROCESS.r): The master execution script located in the root directory.
+- [RUN_PROCESS.r](https://github.com/agsantoro/tblMortality/tree/main/RUN_PROCESS.r): the master execution script located in the root directory.
 
 ## Instructions for Reproduction
 
@@ -42,21 +42,21 @@ To replicate the study results, follow the steps below:
 source("RUN_PROCESS.r")
 `
 
-Note: The RUN_PROCESS.r script manages the sequential execution of all modular scripts. It reads files from inputs/ and populates the outputs/ folder. Please be aware that existing files in the outputs/ directory will be overwritten upon execution.
+Note: The RUN_PROCESS.r script manages the sequential execution of all modular scripts. It reads files from `inputs/` and populates the `outputs/` folder. Please be aware that existing files in the `outputs/` directory will be overwritten upon execution.
 
 ## Statistical Methodology
 
 The analytical pipeline implemented in this repository encompasses:
 
-- Data Integration: Merging mortality records with demographic and spatial datasets.
+- Data Integration: merging mortality records with demographic and spatial datasets.
 
-- Indicator Calculation: Computation of crude and adjusted Standardized Mortality Ratios (SMR).
+- Indicator Calculation: computation of crude and adjusted Standardized Mortality Ratios.
 
-- Spatial Smoothing: Application of spatial models to account for overdispersion and regional autocorrelation.
+- Spatial Smoothing: application of spatial models to get smoothed indicators.
 
-- Geospatial Visualization: Production of thematic maps and statistical plots using ggplot2 and sf.
+- Geospatial Visualization: production of thematic maps using ggplot2 and sf.
 
 ## Citation
 
-If you utilize these materials in your research, please cite the original publication:
+If you utilize these materials in your research, please cite the original publication.
 
