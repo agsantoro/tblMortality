@@ -1,20 +1,20 @@
-#####mapa completo con Malvinas
+##### Complete map with Malvinas Islands
 mapaCompleto = function() {
-  # carga mapa de polígonos de departamentos
+  # Load department polygon map
   load("Cartografía/mapaSimple.rda")
-  mapa2 = read_sf("data/shp/pruebaunion.shp")
-  mapa2 = mapa2 %>% dplyr::select(in1 = FIRST_MI_1) %>% 
+  map2 = read_sf("data/shp/pruebaunion.shp")
+  map2 = map2 %>% dplyr::select(in1 = FIRST_MI_1) %>% 
     dplyr::filter(in1 == "95") %>%
     mutate(in1 = "95000")
   
-  # 1. Convertir mapa a MULTIPOLYGON
+  # 1. Convert map to MULTIPOLYGON
   mapa <- st_cast(mapa, "MULTIPOLYGON")
   
-  # 2. Verificar que ambos tengan el mismo tipo de geometría
+  # 2. Verify both have the same geometry type
   st_geometry_type(mapa, by_geometry = FALSE)
   st_geometry_type(mapa2, by_geometry = FALSE)
   
-  # 3. Unir los mapas
+  # 3. Join maps
   mapa <- rbind(mapa, mapa2)
   mapa = rmapshaper::ms_simplify(mapa)
   
@@ -23,51 +23,48 @@ mapaCompleto = function() {
 
 
 analisisEspacialRME = function (trienio, causa) {
-  ##### PREPARACION DE DATOS #####
-  # cargar poblaciones por departamentos
+  ##### DATA PREPARATION #####
+  # Load populations by department
   load("inputs/data/population/pobDeptosCenso.rda")
   
-  
-  # carga dataset de tasas de mortalidad de población estandar
+  # Load standardized population mortality rates dataset
   load("inputs/data/mortality/tasasEstandarizadas.rda")
   
-  # carga mapa
+  # Load map
   load("inputs/data/shp/mapa.rda")
   
-  # crea lista para guardar resultados
+  # Create list to store results
   resultados = list()
   
-  # carga lista de causas de mortalidad
+  # Load mortality causes list
   load("inputs/data/mortality/causasMortalidad.rda")
   
   causasMortalidad = causasMortalidad %>% 
-    pivot_longer(cols= 1:ncol(causasMortalidad),names_to = "LISTA") %>% 
-    dplyr::filter(is.na(value)==F) %>% 
+    pivot_longer(cols= 1:ncol(causasMortalidad), names_to = "LISTA") %>% 
+    dplyr::filter(is.na(value) == FALSE) %>% 
     distinct(LISTA, value)
   
-  # identifica lista de la causa seleccionada
-  lista = max(causasMortalidad$LISTA[causasMortalidad$value==causa])
+  # Identify the list of the selected cause
+  lista = max(causasMortalidad$LISTA[causasMortalidad$value == causa])
   
-  # identifica el año del censo y los años de las defucniones según el trienio seleccionado
+  # Identify census year and death years according to the selected triennium
   if (trienio == 1) {
     anoCenso = "2001"
     anosDef = 2000:2002
-    anosDef = substring(anosDef,3,4)
+    anosDef = substring(anosDef, 3, 4)
   } else if (trienio == 2) {
     anoCenso = "2010"
     anosDef = 2009:2011
-    anosDef = substring(anosDef,3,4)
+    anosDef = substring(anosDef, 3, 4)
   } else if (trienio == 3) {
     anoCenso = "2022"
     anosDef = 2021:2023
-    anosDef = substring(anosDef,3,4)
+    anosDef = substring(anosDef, 3, 4)
   }
   
-  
-  # formatea df de población:
-  # - filtra mujeres
-  # - agrupa edades
-  
+  # Format population dataframe:
+  # - Filter females (SEXO == 2)
+  # - Group age brackets
   pobDeptosCenso = pobDeptosCenso %>% 
     dplyr::filter(SEXO == 2) %>% 
     pivot_longer(cols = 5:(ncol(pobDeptosCenso)-1), names_to = "GRUPEDAD", values_to = "POBLACION")
@@ -92,11 +89,11 @@ analisisEspacialRME = function (trienio, causa) {
     GRUPEDAD == "POB7074" ~ "POB6574",
     GRUPEDAD == "POB75MAS" ~ "POB75MAS"
   )) %>% 
-    dplyr::filter(is.na(GRUPEDAD_DEPTOS) == F) %>%
+    dplyr::filter(is.na(GRUPEDAD_DEPTOS) == FALSE) %>%
     group_by(ANO, CODIGODEPTO, SEXO, GRUPEDAD_DEPTOS) %>%
     summarise(POBLACION = sum(POBLACION))
   
-  # carga defunciones del trienio seleccionado
+  # Load deaths for the selected triennium
   if (trienio == 1) {
     load("inputs/data/mortality/defTri1.rda")
   } else if (trienio == 2) {
@@ -105,38 +102,37 @@ analisisEspacialRME = function (trienio, causa) {
     load("inputs/data/mortality/defTri3.rda")
   }
   
-  # filtra según la causa seleccionada
+  # Filter based on selected cause
   if (causa != "0000 TODAS LAS CAUSAS") {
     muertes = defTri %>% dplyr::filter(get(lista) == causa)
   } else {
     muertes = defTri
   }
   
-  # formatea df de muertes
+  # Format deaths dataframe
   muertes = muertes %>% 
     group_by(CODIGODEPTO, SEXO, GRUPEDAD_DEPTOS) %>%
     summarise(DEFUNCIONES= n())
   
-  # crea tabla con información de población y muertes por departamento
+  # Create table with population and deaths info by department
   pobDeptosCenso$CODIGODEPTO = as.character(pobDeptosCenso$CODIGODEPTO)
   
   tablaDeptos = 
-    pobDeptosCenso[pobDeptosCenso$ANO==anoCenso & pobDeptosCenso$SEXO %in% c(1,2),] %>% 
-    left_join(muertes, by = c("CODIGODEPTO","GRUPEDAD_DEPTOS","SEXO"))
+    pobDeptosCenso[pobDeptosCenso$ANO == anoCenso & pobDeptosCenso$SEXO %in% c(1, 2), ] %>% 
+    left_join(muertes, by = c("CODIGODEPTO", "GRUPEDAD_DEPTOS", "SEXO"))
   
   tablaDeptos$DEFUNCIONES[is.na(tablaDeptos$DEFUNCIONES)] = 0
   
-  # crea tabla de tasas de mortalidad estandar
-  tasasEstandar = tasasEstandar[tasasEstandar$CAUSA == causa,]
+  # Create standardized mortality rates table
+  tasasEstandar = tasasEstandar[tasasEstandar$CAUSA == causa, ]
   
-  # crea tabla con RMEs y NBI por depto
+  # Create table with SMRs (Standardized Mortality Ratios) and NBI by department
   RMEtable = data.frame()
   
   for (i in unique(tablaDeptos$CODIGODEPTO)) {
-    #for (i = "70126") {
     RME_CRUDA = ageadjust.indirect(
       count = tablaDeptos$DEFUNCIONES[tablaDeptos$CODIGODEPTO == i],
-      pop = tablaDeptos$POBLACION[tablaDeptos$CODIGODEPTO == i]*3,
+      pop = tablaDeptos$POBLACION[tablaDeptos$CODIGODEPTO == i] * 3,
       stdcount = tasasEstandar$DEFUNCIONES,
       stdpop = tasasEstandar$POBLACION,
       stdrate = NULL, 
@@ -148,22 +144,15 @@ analisisEspacialRME = function (trienio, causa) {
       RME_CRUDA = RME_CRUDA$sir[["sir"]],
       STDRATE = RME_CRUDA$rate[["adj.rate"]],
       DEFUNCIONES = sum(tablaDeptos$DEFUNCIONES[tablaDeptos$CODIGODEPTO == i]),
-      POBLACION = sum(tablaDeptos$POBLACION[tablaDeptos$CODIGODEPTO == i])*3,
+      POBLACION = sum(tablaDeptos$POBLACION[tablaDeptos$CODIGODEPTO == i]) * 3,
       ESPERADAS = RME_CRUDA$sir[["exp"]]
     )
     
-    RMEtable = rbind(
-      RMEtable,
-      append
-    )
-    
-    
-    
+    RMEtable = rbind(RMEtable, append)
   }
   
-  malvinas = c("95000",rep(NA,5))
-  
-  RMEtable = rbind(RMEtable,malvinas)
+  malvinas = c("95000", rep(NA, 5))
+  RMEtable = rbind(RMEtable, malvinas)
   
   RMEtable = RMEtable %>%
     mutate(
@@ -174,28 +163,24 @@ analisisEspacialRME = function (trienio, causa) {
       STDRATE = as.numeric(STDRATE)
     )
   
-  return(
-    RMEtable
-  )
-  
+  return(RMEtable)
 }
 
 
-# Suma indicadores al mapa e identifica el trienio al que pertenece el dataframe
-
-indicadores_mapa_trienio <-function (df,trienio) {
-  # carga mapa de polígonos de departamentos
+# Adds indicators to the map and identifies the triennium the dataframe belongs to
+indicadores_mapa_trienio <- function (df, trienio) {
+  # Load department polygon map
   load("inputs/data/shp/mapa.rda")
   
-  df<-df %>% rename("in1"="CODIGODEPTO") %>%
+  df <- df %>% rename("in1" = "CODIGODEPTO") %>%
     left_join(mapa, by = "in1") %>%
     mutate (TRIENIO = trienio)
   
   return(df)
 }
 
-generarRDA = function(trienio,causa) {
-  RMEtable = analisisEspacialRME(trienio,causa)
+generarRDA = function(trienio, causa) {
+  RMEtable = analisisEspacialRME(trienio, causa)
   
   anoCenso = switch (
     trienio,
@@ -207,49 +192,48 @@ generarRDA = function(trienio,causa) {
   RMEtable = indicadores_mapa_trienio(RMEtable, anoCenso)
   
   save(RMEtable, file = glue("outputs/data/data_trienio_{trienio}.rda"))
-  
 }
 
 
-#####Cálculo de cuartiles con nombre sufijo
+##### Quartile calculation with suffix name
 cuartiles <- function(df, variable) {
   datos <- df[[variable]]
   
-  # Calcular los quintiles (0%, 25%, 50%, 75%, 100%)
+  # Calculate quintiles (0%, 25%, 50%, 75%, 100%)
   quintiles <- quantile(datos, probs = c(0, 0.25, 0.5, 0.75, 1), na.rm = TRUE)
   
-  # Asignar etiquetas de cuartiles
+  # Assign quartile labels
   rangos_cuartiles <- cut(datos, breaks = quintiles, 
                           labels = c("Q1", "Q2", "Q3", "Q4"), 
                           include.lowest = TRUE)
   
-  # Crear una nueva columna en el data.frame
+  # Create a new column in the dataframe
   nueva_columna <- paste0("cuartil_", variable)
   df[[nueva_columna]] <- rangos_cuartiles
   
   return(df)
 }
 
-#####paletas mapas
+##### Map palettes
 aplicar_paleta <- function(tipo_variable) {
   
-  # 1. Definimos los colores según la variable
+  # 1. Define colors based on the variable type
   if (tipo_variable == "cuartil_RME_CRUDA") {
     colores <- c("#edf8fb", "#b2e2e2", "#66c2a4", "#238b45")
   } else if (tipo_variable == "cuartil_RME_SUAVIZADA") {
     colores <- c("#f2f0f7", "#cbc9e2", "#9e9ac8", "#6a51a3")
   } else {
-    return(NULL) # Si no coincide, no devuelve nada sin tirar error
+    return(NULL) # If no match, return nothing without error
   }
   
-  # 2. Creamos el dataframe base
+  # 2. Create base dataframe
   paleta <- data.frame(
     c("Q1", "Q2", "Q3", "Q4"),
     colores
   )
   
-  # 3. Renombramos las columnas dinámicamente
-  # Esto creará: cuartiles_RME_CRUDA y color_RME_CRUDA (por ejemplo)
+  # 3. Rename columns dynamically
+  # e.g., creates: cuartil_RME_CRUDA and color_cuartil_RME_CRUDA
   colnames(paleta) <- c(paste0("", tipo_variable), 
                         paste0("color_", tipo_variable))
   
@@ -257,33 +241,33 @@ aplicar_paleta <- function(tipo_variable) {
 }
 
 
-#####cálculo de minmax
+##### Min-Max calculation
 obtener_minmax <- function(df, tipo_variable) {
   
-  # Creamos el nombre de la columna de cuartiles que vamos a buscar
+  # Create the quartile column name to search for
   nombre_cuartil <- paste0("cuartil_", tipo_variable)
   
-  # 1. Calculamos min y max dinámicamente
+  # 1. Calculate min and max dynamically
   resumen <- df %>%
     st_drop_geometry() %>% 
-    # Agrupamos por la columna dinámica 
+    # Group by dynamic column
     group_by(.data[[nombre_cuartil]]) %>%
     summarise(
       minimo = min(.data[[tipo_variable]], na.rm = TRUE),
       maximo = max(.data[[tipo_variable]], na.rm = TRUE),
       .groups = 'drop'
     ) %>%
-    # Filtramos filas vacías (como las de TDF si no tienen datos)
+    # Filter empty rows (like TDF if no data exists)
     filter(!is.na(.data[[nombre_cuartil]]))
   
-  # 2. Formateo de texto para la leyenda del paper
+  # 2. Text formatting for paper legend
   resumen$rango <- paste0(
     format(resumen$minimo, digits = 2, nsmall = 2, big.mark = ".", decimal.mark = ","),
     " - ",
     format(resumen$maximo, digits = 2, nsmall = 2, big.mark = ".", decimal.mark = ",")
   )
   
-  # 3. Renombramos las columnas para que no choquen al unir trienios
+  # 3. Rename columns to avoid conflicts when joining trienniums
   colnames(resumen) <- c(
     nombre_cuartil, 
     paste0("minimo_", tipo_variable), 
@@ -295,7 +279,7 @@ obtener_minmax <- function(df, tipo_variable) {
 }
 
 
-#####mapas cuartiles
+##### Quartile maps
 mapas_rme_cuartiles <- function(variable, titulo_var, trienios_seleccionados) {
   
   if (variable == "RME_CRUDA") {
@@ -303,42 +287,40 @@ mapas_rme_cuartiles <- function(variable, titulo_var, trienios_seleccionados) {
   } else if (variable == "RME_SUAVIZADA") {
     base_a_usar <- data_rme_suavizada
   } else {
-    stop("La variable debe ser 'RME_CRUDA' o 'RME_SUAVIZADA'")
+    stop("The variable must be 'RME_CRUDA' or 'RME_SUAVIZADA'")
   }
   
-  # Filtrar la base seleccionada por los trienios indicados
+  # Filter the selected base by the indicated trienniums
   df_filtrado <- base_a_usar %>%
     dplyr::filter(TRIENIO %in% trienios_seleccionados)
   
-  # 1. Definir nombres de columnas dinámicas basándose en la variable
-  # Si variable = "RME_SUAVIZADA", buscará "cuartil_RME_SUAVIZADA", etc.
+  # 1. Define dynamic column names based on the variable
   col_cuartil <- paste0("cuartil_", variable)
   col_color   <- paste0("color_cuartil_", variable)
   col_rango   <- paste0("rango_", variable)
   
-  # 2. Función interna para crear cada mapa individual
+  # 2. Internal function to create each individual map
   mapa_por_trienio <- function(trienio_actual, mostrar_leyenda = FALSE) {
     
-    # Filtrar datos del trienio específico
+    # Filter data for specific triennium
     df_trienio <- df_filtrado %>% dplyr::filter(TRIENIO == trienio_actual)
-    df_caba    <- df_trienio %>% dplyr::filter(in1 == "02000") # CABA para el inset
+    df_caba    <- df_trienio %>% dplyr::filter(in1 == "02000") # CABA for inset
     
-    # Extraer la combinación única de Cuartil y Color
-    # Usamos .data[[...]] para que ggplot busque el nombre contenido en la variable
+    # Extract unique combination of Quartile and Color
     colores_por_cuartil <- df_trienio %>%
       st_drop_geometry() %>%
       distinct(.data[[col_cuartil]], .data[[col_color]]) %>%
       drop_na() %>%
       deframe()
     
-    # Extraer la combinación única de Cuartil y Rango de texto para la leyenda
+    # Extract unique combination of Quartile and range text for legend
     etiquetas_por_cuartil <- df_trienio %>%
       st_drop_geometry() %>%
       distinct(.data[[col_cuartil]], .data[[col_rango]]) %>%
       drop_na() %>%
       deframe()
     
-    # Mapa Nacional
+    # National Map
     mapa_nacional <- ggplot(df_trienio) +
       geom_sf(aes(fill = .data[[col_cuartil]]), color = "black", size = 0.1) +
       scale_fill_manual(
@@ -351,12 +333,10 @@ mapas_rme_cuartiles <- function(variable, titulo_var, trienios_seleccionados) {
       labs(title = paste("Triennium", trienio_actual)) +
       theme(
         legend.position = if (mostrar_leyenda) "right" else "none",
-        plot.title = element_text(hjust = 0.5, face = "bold", size = 10)#,
-      #  axis.text = element_blank(),
-      #  panel.grid = element_blank()
+        plot.title = element_text(hjust = 0.5, face = "bold", size = 10)
       )
     
-    # Mapa CABA (Inset)
+    # CABA Map (Inset)
     mapa_caba <- ggplot(df_caba) +
       geom_sf(aes(fill = .data[[col_cuartil]]), color = "black", size = 0.2) +
       scale_fill_manual(values = colores_por_cuartil, guide = "none") +
@@ -364,19 +344,19 @@ mapas_rme_cuartiles <- function(variable, titulo_var, trienios_seleccionados) {
       theme_void() +
       theme(panel.border = element_rect(color = "black", fill = NA, size = 0.5))
     
-    # Combinar mapa nacional con el zoom de CABA
+    # Combine national map with CABA zoom
     mapa_nacional + inset_element(
       mapa_caba,
       left = 0.9, bottom = 0.5, right = 0.98, top = 0.7
     )
   }
   
-  # 3. Lógica para mostrar la leyenda solo en el último mapa
+  # 3. Logic to show legend only on the last map
   n <- length(trienios_seleccionados)
   leyenda_vec <- rep(FALSE, n)
   leyenda_vec[n] <- TRUE
   
-  # 4. Generar la lista de mapas usando mapply
+  # 4. Generate map list using mapply
   mapas_lista <- mapply(
     mapa_por_trienio,
     trienios_seleccionados,
@@ -384,16 +364,12 @@ mapas_rme_cuartiles <- function(variable, titulo_var, trienios_seleccionados) {
     SIMPLIFY = FALSE
   )
   
-  # 5. Unir todos los mapas en una sola fila
-  wrap_plots(mapas_lista, ncol = n) #+
-  #  plot_annotation(
-     # caption = "Fuente: elaboración propia en base a datos de la DEIS.",
-   #   theme = theme(plot.caption = element_text(size = 8, hjust = 0))
-  #  )
+  # 5. Join all maps in a single row
+  wrap_plots(mapas_lista, ncol = n)
 }
 
 
-#####FUNCION PARA ESTIMAR RR SUAVIZADO Y PP >1
+##### FUNCTION TO ESTIMATE SMOOTHED RR AND PP > 1
 suavizar_rme <- function(data_trienio, data_tdf, nombre_archivo_vecindad = "adjacency.graph") {
   
   datos_modelo <- data_trienio %>%
@@ -402,14 +378,14 @@ suavizar_rme <- function(data_trienio, data_tdf, nombre_archivo_vecindad = "adja
   
   datos_modelo$nuevo_id <- 1:nrow(datos_modelo)
   
-  # Crear matriz de vecindades
+  # Create neighborhood matrix
   deptos_nb <- poly2nb(datos_modelo, row.names = datos_modelo$nuevo_id, queen = TRUE)
   
-  # Guardar y leer archivo de vecinos para INLA
+  # Save and read neighborhood file for INLA
   nb2INLA(file = nombre_archivo_vecindad, nb = deptos_nb)
   vecindad_inla <- inla.read.graph(filename = nombre_archivo_vecindad)
   
-  # Preparar datos de TDF con NA para luego mapear
+  # Prepare TDF data with NA for later mapping
   datos_tdf <- data_tdf %>%
     dplyr::filter((in1 == "94000" | in1 == "95000") & TRIENIO == first(data_trienio$TRIENIO)) %>%
     mutate(
@@ -419,7 +395,7 @@ suavizar_rme <- function(data_trienio, data_tdf, nombre_archivo_vecindad = "adja
     ) %>% 
     dplyr::select(-c("cuartil_RME_CRUDA", "color_cuartil_RME_CRUDA", "minimo_RME_CRUDA", "maximo_RME_CRUDA", "rango_RME_CRUDA")) 
   
-  # Fórmula BYM2
+  # BYM2 Formula
   formula <- DEFUNCIONES ~ 1 + f(nuevo_id,
                                  model = "bym2", 
                                  graph = vecindad_inla,
@@ -430,52 +406,51 @@ suavizar_rme <- function(data_trienio, data_tdf, nombre_archivo_vecindad = "adja
                                    prec = list(prior = "pc.prec", param = c(1, 0.01), initial = 4)
                                  ))
   
-  # Ajuste del modelo INLA
+  # INLA model fit
   fitmod <- inla(formula,
                  data = datos_modelo,
                  family = "poisson",
                  E = ESPERADAS,
                  control.predictor = list(compute = TRUE),
-                 control.compute = list(return.marginals.predictor = TRUE), #para poder calcular PP
+                 control.compute = list(return.marginals.predictor = TRUE), # To calculate PP
                  verbose = TRUE)
   
-  # Agregar resultados al dataframe
+  # Add results to dataframe
   datos_modelo$RME_SUAVIZADA <- fitmod$summary.fitted.values$mean
   
-  # Calcular probabilidades posteriores P(RR > 1)
+  # Calculate posterior probabilities P(RR > 1)
   prob_post <- map_dbl(fitmod$marginals.fitted.values, ~ 1 - inla.pmarginal(1, .x))
   datos_modelo$PROBABILIDAD_POSTERIOR <- prob_post
   
   return(bind_rows(datos_modelo, datos_tdf))
-  
 }
 
 
-#FUNCION PARA MAPA PROBABILIDAD POSTERIOR POR TRIENIOS 
+# FUNCTION FOR POSTERIOR PROBABILITY MAP BY TRIENNIUM
 mapas_PP_RR <- function(variable = "PROBABILIDAD_POSTERIOR", titulo_var, trienios_seleccionados) {
   
-  # Filtrar base por trienios seleccionados
+  # Filter base by selected trienniums
   df_filtrado <- data_rme_suavizada %>%
     dplyr::filter(TRIENIO %in% trienios_seleccionados)
   
   df_mapa <- df_filtrado
   
-  # Función interna para crear un mapa por trienio
+  # Internal function to create a map per triennium
   mapa_por_trienio <- function(trienio_actual, mostrar_leyenda = FALSE) {
     df_trienio <- df_mapa %>% filter(TRIENIO == trienio_actual)
     df_caba <- df_trienio %>% filter(in1 == "02000")
     
-    # Extraer colores por cuartil para este trienio
+    # Extract colors for this triennium
     colores_PP <- df_trienio %>%
       distinct(INTERVALOS_PP, color_PP) %>%
       deframe()
     
-    #Etiquetas por cuartil
+    # Interval labels
     etiquetas_por_intervalo <- df_trienio %>%
       distinct(color_PP, leyenda_pp) %>%
       deframe()
     
-    # Mapa nacional
+    # National map
     mapa_nacional <- ggplot(df_trienio) +
       geom_sf(aes(fill = INTERVALOS_PP), color = "black", size = 0.2) +
       scale_fill_manual(
@@ -492,7 +467,7 @@ mapas_PP_RR <- function(variable = "PROBABILIDAD_POSTERIOR", titulo_var, trienio
         plot.title = element_text(hjust = 0.5, face = "bold")
       )
     
-    # Mapa CABA (inset)
+    # CABA map (inset)
     mapa_caba <- ggplot(df_caba) +
       geom_sf(aes(fill = INTERVALOS_PP), color = "black") +
       scale_fill_manual(
@@ -503,19 +478,19 @@ mapas_PP_RR <- function(variable = "PROBABILIDAD_POSTERIOR", titulo_var, trienio
       theme_void() +
       theme(panel.border = element_rect(color = "black", fill = NA))
     
-    # Insertar CABA en el mapa nacional
+    # Insert CABA into national map
     mapa_nacional + inset_element(
       mapa_caba,
       left = 0.9, bottom = 0.5, right = 0.98, top = 0.7
     )
   }
   
-  # Control de leyenda (solo en el último mapa)
+  # Legend control (only on the last map)
   n <- length(trienios_seleccionados)
   leyenda_vec <- rep(FALSE, n)
   leyenda_vec[n] <- TRUE
   
-  # Crear mapas por trienio
+  # Create maps by triennium
   mapas <- mapply(
     mapa_por_trienio,
     trienios_seleccionados,
@@ -523,10 +498,7 @@ mapas_PP_RR <- function(variable = "PROBABILIDAD_POSTERIOR", titulo_var, trienio
     SIMPLIFY = FALSE
   )
   
-  # Combinar los mapas y agregar título
-  wrap_plots(mapas, ncol = n) #+
-   # plot_annotation(
-    #  title = paste(titulo_var, "por tumores de tráquea, bronquio y pulmón en mujeres. Argentina"),
-    #  caption = "Fuente: elaboración propia en base a datos DEIS"
-   # )
+  # Combine maps
+  wrap_plots(mapas, ncol = n)
 }
+

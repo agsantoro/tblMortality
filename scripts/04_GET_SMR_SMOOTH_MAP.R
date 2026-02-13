@@ -1,17 +1,17 @@
-#Librerias
+# Libraries
 
 library(tidyverse)
 library(sf)
 library(RColorBrewer)
 library(patchwork)
 
-#Importo base
+# Import dataset
 load("outputs/data/data_rme_suavizada.rda")
 
 sf_use_s2(FALSE)
 
 #===============================
-#MAPA RME DIVIDIDA EN CUARTILES
+# SMOOTHED SMR MAP DIVIDED BY QUARTILES
 #===============================
 
 mapa_rme <- mapas_rme_cuartiles(
@@ -21,16 +21,16 @@ mapa_rme <- mapas_rme_cuartiles(
 )
 
 #===================================================
-#MAPA PP RR >1
+# POSTERIOR PROBABILITY (PP) MAP RR > 1
 #===================================================
 
 mapa_pp <- mapas_PP_RR(
-  variable = "Probabilidad Posterior (PP)" ,
+  variable = "Probabilidad Posterior (PP)",
   titulo_var = "Probabilidad posterior (PP)",
-  trienios_seleccionados= c("2000-2002", "2009-2011", "2021-2023")
+  trienios_seleccionados = c("2000-2002", "2009-2011", "2021-2023")
 )
 
-message("Mapas RME suavizada, RR suavizado y PP generados")
+message("Smoothed SMR, Smoothed RR, and PP maps generated")
 
 
 ggsave(
@@ -52,4 +52,3 @@ ggsave(
   units = "cm",
   dpi = 300
 )
-

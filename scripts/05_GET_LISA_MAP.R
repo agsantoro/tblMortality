@@ -6,14 +6,10 @@ library(stringr)
 library(ggplot2)
 library(patchwork)
 library(tibble)
-library(leaflet)
 
-#leaflet(mapa) %>% addTiles() %>% addPolygons()
-
-# ------leaflet# -----------------------------
-# 1) PARÁMETROS / PATHS
 # -----------------------------
-
+# 1) PARAMETERS / PATHS
+# -----------------------------
 PATH_XLSX <- "inputs/data/population/bivariado.xlsx"
 PATH_SHP  <- "inputs/data/shp/mapa.rda"
 
@@ -25,7 +21,7 @@ SEED      <- 123
 OUT_FIG <- "mapa_capeco.png"
 
 # -----------------------------
-# 2) CARGA DE DATOS
+# 2) DATA LOADING
 # -----------------------------
 biv <- read_excel(PATH_XLSX) %>%
   mutate(in1 = sprintf("%05d", as.integer(in1))) %>%
@@ -34,19 +30,18 @@ biv <- read_excel(PATH_XLSX) %>%
 load(PATH_SHP)
 
 # -----------------------------
-# 4) ARMAR SF POR TRIENIO (SOLO CASOS COMPLETOS)
+# 4) ASSEMBLE SF BY TRIENNIUM (NON-SPATIAL FILTERING)
 # -----------------------------
 armar_sf_trienio <- function(trienio, depts_sf, biv_df) {
   depts_sf %>%
-    left_join(biv_df %>% filter(TRIENIO == trienio), by = "in1") #%>%
-    #dplyr::filter(!is.na(RME_SUAVIZADA), !is.na(PCT_CAPECO))
+    left_join(biv_df %>% filter(TRIENIO == trienio), by = "in1")
 }
 
 sf_2000 <- armar_sf_trienio(TRIENIOS[1], mapa, biv)
 sf_2021 <- armar_sf_trienio(TRIENIOS[2], mapa, biv)
 
 # -----------------------------
-# 5) PESOS ESPACIALES (VECINOS + LISTW)
+# 5) SPATIAL WEIGHTS (NEIGHBORS + LISTW)
 # -----------------------------
 armar_pesos <- function(sf_obj, queen = TRUE, style = "W") {
   nb <- poly2nb(sf_obj, queen = queen)
@@ -56,11 +51,12 @@ armar_pesos <- function(sf_obj, queen = TRUE, style = "W") {
 
 sf_use_s2(FALSE)
 
+# Exclude islands for weight calculation (avoiding isolates)
 w_2000 <- armar_pesos(sf_2000[!sf_2000$in1 %in% c("94000","95000"),], queen = TRUE, style = "W")
 w_2021 <- armar_pesos(sf_2021[!sf_2021$in1 %in% c("94000","95000"),], queen = TRUE, style = "W")
 
 # -----------------------------
-# 6) MORAN GLOBAL BIVARIADO (PERMUTACIONES)
+# 6) GLOBAL BIVARIATE MORAN'S I (PERMUTATIONS)
 # -----------------------------
 moran_bivariado_global_perm <- function(sf_obj, lw_obj, nsim = 999, seed = 123) {
   x <- as.numeric(scale(sf_obj$RME_SUAVIZADA))
@@ -83,11 +79,11 @@ moran_bivariado_global_perm <- function(sf_obj, lw_obj, nsim = 999, seed = 123) 
 moran_2000 <- moran_bivariado_global_perm(sf_2000[!sf_2000$in1 %in% c("94000","95000"),], w_2000$lw, nsim = NSIM, seed = SEED)
 moran_2021 <- moran_bivariado_global_perm(sf_2021[!sf_2021$in1 %in% c("94000","95000"),], w_2021$lw, nsim = NSIM, seed = SEED)
 
-cat("\nMoran bivariado global 2000-2002: I =", moran_2000$I_obs, "p =", moran_2000$p_value, "\n")
-cat("Moran bivariado global 2021-2023: I =", moran_2021$I_obs, "p =", moran_2021$p_value, "\n")
+cat("\nGlobal Bivariate Moran's I 2000-2002: I =", moran_2000$I_obs, "p =", moran_2000$p_value, "\n")
+cat("Global Bivariate Moran's I 2021-2023: I =", moran_2021$I_obs, "p =", moran_2021$p_value, "\n")
 
 # -----------------------------
-# 7) LISA LOCAL BIVARIADO (PERMUTACIONES) + CLUSTERS (TU ORIGINAL)
+# 7) LOCAL BIVARIATE LISA (PERMUTATIONS) + CLUSTERS
 # -----------------------------
 lisa_bivariado_local_perm <- function(sf_obj, lw_obj, alpha = 0.05, nsim = 999, seed = 123) {
   x <- as.numeric(scale(sf_obj$RME_SUAVIZADA))
@@ -112,7 +108,7 @@ lisa_bivariado_local_perm <- function(sf_obj, lw_obj, alpha = 0.05, nsim = 999, 
       Ii_bv = Ii_obs,
       p_sim = p_sim,
       cluster = case_when(
-        p_sim > alpha     ~ "No significativo",
+        p_sim > alpha     ~ "Not significant",
         x >= 0 & Wy >= 0  ~ "High–High",
         x <= 0 & Wy <= 0  ~ "Low–Low",
         x >= 0 & Wy <= 0  ~ "High–Low",
@@ -124,48 +120,43 @@ lisa_bivariado_local_perm <- function(sf_obj, lw_obj, alpha = 0.05, nsim = 999, 
 lisa_sf_2000 <- lisa_bivariado_local_perm(sf_2000[!sf_2000$in1 %in% c("94000","95000"),], w_2000$lw, alpha = ALPHA, nsim = NSIM, seed = SEED)
 lisa_sf_2021 <- lisa_bivariado_local_perm(sf_2021[!sf_2021$in1 %in% c("94000","95000"),], w_2021$lw, alpha = ALPHA, nsim = NSIM, seed = SEED)
 
-
+# Merge clusters back to full sf including excluded regions
 sf_2000 = sf_2000 %>% left_join(lisa_sf_2000 %>% dplyr::select(cluster) %>% as.data.frame())
-sf_2000$cluster[is.na(sf_2000$cluster)] = "Excluido"
+sf_2000$cluster[is.na(sf_2000$cluster)] = "Excluded"
 
 sf_2021 = sf_2021 %>% left_join(lisa_sf_2021 %>% dplyr::select(cluster) %>% as.data.frame())
-sf_2021$cluster[is.na(sf_2021$cluster)] = "Excluido"
-
+sf_2021$cluster[is.na(sf_2021$cluster)] = "Excluded"
 
 # -----------------------------
-# 8) COLORES / NIVELES (FIJOS)
+# 8) COLORS / LEVELS (FIXED)
 # -----------------------------
-niveles_cluster <- c("High–High", "Low–Low", "High–Low", "Low–High", "No significativo", "Excluido")
+niveles_cluster <- c("High–High", "Low–Low", "High–Low", "Low–High", "Not significant", "Excluded")
 
 colores_lisa <- c(
   "High–High" = "#B2182B",
   "Low–Low" = "#2166AC",
   "High–Low" = "#EF8A62",
   "Low–High" = "#67A9CF",
-  "No significativo" = "grey80",
-  "Excluido" = "#636363"
-  
+  "Not significant" = "grey80",
+  "Excluded" = "#636363"
 )
 
 sf_2000$cluster <- factor(sf_2000$cluster, levels = niveles_cluster)
 sf_2021$cluster <- factor(sf_2021$cluster, levels = niveles_cluster)
 
 # -----------------------------
-# 9) MAPA LISA CON INSET CABA + TDF/MALVINAS EN GRIS
+# 9) LISA MAP WITH CABA INSET
 # -----------------------------
 mapa_lisa_caba <- function(sf_lisa, trienio, depts_caba_sf, colores, mostrar_leyenda = FALSE) {
-  # =========================
-  # 1) MAPA PRINCIPAL (IGUAL AL ORIGINAL)
-  # =========================
   
+  # 1) MAIN NATIONAL MAP
   bb <- st_bbox(sf_lisa)
   dx <- as.numeric(bb["xmax"] - bb["xmin"])
   dy <- as.numeric(bb["ymax"] - bb["ymin"])
   
-
   xlim_main <- c(as.numeric(bb["xmin"]), as.numeric(bb["xmax"]))
   ylim_main <- c(as.numeric(bb["ymin"] - 0.18*dy), as.numeric(bb["ymax"]))
- 
+  
   mapa_nacional <- ggplot(sf_lisa) +
     geom_sf(aes(fill = cluster), color = "white", linewidth = 0.1) +
     scale_fill_manual(
@@ -175,7 +166,6 @@ mapa_lisa_caba <- function(sf_lisa, trienio, depts_caba_sf, colores, mostrar_ley
       guide = if (mostrar_leyenda) "legend" else "none"
     ) +
     coord_sf(xlim = xlim_main, ylim = ylim_main, expand = FALSE) +
-   # theme_void() +
     theme_minimal() +
     labs(title = trienio) +
     theme(
@@ -183,10 +173,7 @@ mapa_lisa_caba <- function(sf_lisa, trienio, depts_caba_sf, colores, mostrar_ley
       legend.position = if (mostrar_leyenda) "bottom" else "none"
     )
   
-  
-  # =========================
-  # 2) INSET CABA (más chico y pegado, como tu original)
-  # =========================
+  # 2) CABA INSET (Small and adjacent)
   caba <- sf_lisa %>%
     dplyr::filter(in1 == "02000") %>%
     left_join(sf_lisa %>% st_drop_geometry() %>% dplyr::select(in1, cluster), by = "in1") %>%
@@ -208,20 +195,16 @@ mapa_lisa_caba <- function(sf_lisa, trienio, depts_caba_sf, colores, mostrar_ley
     theme_void() +
     theme(panel.border = element_rect(color = "black", fill = NA, linewidth = 0.4))
   
-  # =========================
-  # 3) INSET TDF + MALVINAS (gris = No significativo)
-  # =========================
-  # =========================
-  # 3) INSET TDF (continental) + MALVINAS encima
-  # =========================
+  # 3) COMBINE NATIONAL + INSET
   mapa_nacional +
-    inset_element (mapa_caba, left = 0.86, bottom = 0.50, right = 0.98, top = 0.74)
+    inset_element(mapa_caba, left = 0.86, bottom = 0.50, right = 0.98, top = 0.74)
 }
 
-
+# Generate maps
 mapa_2000 <- mapa_lisa_caba(sf_2000, "Triennium 2000–2002", depts_final, colores_lisa, mostrar_leyenda = TRUE)
 mapa_2021 <- mapa_lisa_caba(sf_2021, "Triennium 2021–2023", depts_final, colores_lisa, mostrar_leyenda = FALSE)
 
+# Final Layout
 figura_final <- (mapa_2000 | mapa_2021) +
   plot_layout(guides = "collect") &
   theme(
@@ -230,8 +213,7 @@ figura_final <- (mapa_2000 | mapa_2021) +
     legend.box.just = "center"
   )
 
-#print(figura_final)
-
+# Save figure
 ggsave(
   filename = "outputs/figures/mapa_lisa.jpg",
   plot = figura_final,
@@ -243,6 +225,3 @@ ggsave(
 )
 
 unlink("adjacency.graph")
-
-
-

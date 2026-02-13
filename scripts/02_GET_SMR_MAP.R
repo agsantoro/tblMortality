@@ -10,17 +10,15 @@ library(ggplot2)
 
 sf_use_s2(FALSE)
 
-#=============== MAPAS PARA GRAFICAR RME POR TUMORES DE TRÁQUEA, BRONQUIO Y PULMÓN ================#
+#=============== MAPS FOR PLOTTING SMR FOR TRACHEA, BRONCHUS, AND LUNG TUMORS ================#
 
-# importa bases de datasets
-
+# Import datasets
 load("outputs/data/data_trienio_1.rda")
 load("outputs/data/data_trienio_2.rda")
 load("outputs/data/data_trienio_3.rda")
 
 
-# une datasets de los 3 trienios
-
+# Join datasets from all 3 trienniums
 trienios = 1:3
 
 base_mapa_rme = lapply(trienios, function(i) {
@@ -28,33 +26,33 @@ base_mapa_rme = lapply(trienios, function(i) {
   RMEtable
 })
 
-base_mapa_rme = do.call(rbind,base_mapa_rme)
+base_mapa_rme = do.call(rbind, base_mapa_rme)
 
-# transforma base a sf para mapear
+# Transform base to sf object for mapping
 base_mapa_rme <- st_as_sf(base_mapa_rme)
 
-#Cuartiles de RME considerando todos los periodos
+# SMR Quartiles considering all periods
 base_mapa_rme <- cuartiles(base_mapa_rme, "RME_CRUDA")
 paleta <- aplicar_paleta("cuartil_RME_CRUDA")
 
-#Asigno un color específico a cada color
+# Assign a specific color to each quartile
 base_mapa_rme <- base_mapa_rme %>% 
   left_join(paleta, by = "cuartil_RME_CRUDA")
 
-#Calculo valores mínimos y máximos para cada cuartiles para la leyenda del mapa
+# Calculate minimum and maximum values for each quartile for the map legend
 minMax_RME_CRUDA = obtener_minmax(base_mapa_rme, "RME_CRUDA")
 
-#Uno leyendas al dataframe
+# Join legends to the dataframe
 base_mapa_rme <- base_mapa_rme %>% 
   left_join(minMax_RME_CRUDA, by = "cuartil_RME_CRUDA")
 
-#Guardo base
+# Save base data
 data_rme <- base_mapa_rme
 save(data_rme, file = "outputs/data/data_rme.rda")
 
 
 #===============================
-#MAPA RME_CRUDA DIVIDIDA EN CUARTILES
+# RAW SMR MAP DIVIDED BY QUARTILES
 #===============================
 
 mapa <- mapas_rme_cuartiles(
@@ -63,7 +61,7 @@ mapa <- mapas_rme_cuartiles(
   trienios_seleccionados = c("2000-2002", "2009-2011", "2021-2023")
 )
 
-message("Mapas RME_CRUDA generados")
+message("RAW SMR Maps generated")
 
 ggsave(
   filename = "outputs/figures/map_smr.jpg",
