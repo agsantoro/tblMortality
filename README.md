@@ -14,17 +14,17 @@ The directory is organized to maintain a strict separation between raw inputs, p
 
 - [data/population/](https://github.com/agsantoro/tblMortality/tree/main/data/population): Population counts and socio-demographic covariates.
 
-- shp/: Cartographic boundaries and geospatial data (Shapefiles).
+- [shp/](https://github.com/agsantoro/tblMortality/tree/main/data/shp): Cartographic boundaries and geospatial data (Shapefiles).
 
-- scripts/: Modular R scripts performing specific tasks such as data cleaning, statistical modeling, and plot generation.
+- [scripts/](https://github.com/agsantoro/tblMortality/tree/main/scripts): Modular R scripts performing specific tasks such as data cleaning, statistical modeling, and plot generation.
 
-- outputs/: Final results derived from the execution of the pipeline.
+- [outputs/](https://github.com/agsantoro/tblMortality/tree/main/outputs): Final results derived from the execution of the pipeline.
 
-- outputs/data/: Processed data frames containing Standardized Mortality Ratios (SMR) and Smoothed Standardized Mortality Ratios.
+- [outputs/data/](https://github.com/agsantoro/tblMortality/tree/main/outputs/data): Processed data frames containing Standardized Mortality Ratios (SMR) and Smoothed Standardized Mortality Ratios.
 
-- outputs/figures/: High-resolution figures and maps as they appear in the publication.
+- [outputs/figures/](https://github.com/agsantoro/tblMortality/tree/main/outputs/figures): High-resolution figures and maps as they appear in the publication.
 
-- RUN_PROCESS.r: The master execution script located in the root directory.
+- [RUN_PROCESS.r](https://github.com/agsantoro/tblMortality/tree/main/RUN_PROCESS.r): The master execution script located in the root directory.
 
 ## Instructions for Reproduction
 
