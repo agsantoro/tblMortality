@@ -26,7 +26,7 @@ The directory is organized to maintain a strict separation between data inputs, 
 
 - [RUN_PROCESS.r](https://github.com/agsantoro/tblMortality/blob/main/RUN_PROCESS.R): the master execution script located in the root directory.
 
-## Instructions for Reproduction
+## Instructions for reproduction
 
 To replicate the study results, follow the steps below:
 
@@ -44,7 +44,7 @@ source("RUN_PROCESS.r")
 
 Note: The RUN_PROCESS.r script manages the sequential execution of all modular scripts. It reads files from `inputs/` and populates the `outputs/` folder. Please be aware that existing files in the `outputs/` directory will be overwritten upon execution.
 
-## Statistical Methodology
+## Statistical methodology
 
 The analytical pipeline implemented in this repository encompasses:
 
