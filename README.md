@@ -24,7 +24,7 @@ The directory is organized to maintain a strict separation between data inputs, 
 
 - [outputs/figures/](https://github.com/agsantoro/tblMortality/tree/main/outputs/figures): high-resolution figures and maps as they appear in the publication.
 
-- [RUN_PROCESS.r](https://github.com/agsantoro/tblMortality/tree/main/RUN_PROCESS.r): the master execution script located in the root directory.
+- [RUN_PROCESS.r](https://github.com/agsantoro/tblMortality/blob/main/RUN_PROCESS.R): the master execution script located in the root directory.
 
 ## Instructions for Reproduction
 
