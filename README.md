@@ -10,11 +10,11 @@ The directory is organized to maintain a strict separation between data inputs, 
 
 - [inputs/](https://github.com/agsantoro/tblMortality/tree/main/inputs): source data required for the analysis.
 
-- [data/mortality/](https://github.com/agsantoro/tblMortality/tree/main/data/mortality): mortality datasets.
+- [data/mortality/](https://github.com/agsantoro/tblMortality/tree/main/inputs/data/mortality): mortality datasets.
 
-- [data/population/](https://github.com/agsantoro/tblMortality/tree/main/data/population): population counts and socio-demographic covariates.
+- [data/population/](https://github.com/agsantoro/tblMortality/tree/main/inputs/data/population): population counts and socio-demographic covariates.
 
-- [shp/](https://github.com/agsantoro/tblMortality/tree/main/data/shp): cartographic boundaries and geospatial data (Shapefiles).
+- [shp/](https://github.com/agsantoro/tblMortality/tree/main/inputs/data/shp): cartographic boundaries and geospatial data (Shapefiles).
 
 - [scripts/](https://github.com/agsantoro/tblMortality/tree/main/scripts): modular R scripts performing specific tasks such as data proccesing, statistical modeling, and plot generation.
 
